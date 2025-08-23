@@ -77,7 +77,7 @@ function Surah({ surah, prevSurah, nextSurah }) {
     <>
       <Head>
         <title>
-          Surah {surah.namaLatin} | Al-Qur'an Digital
+          Surah {surah.namaLatin} | Al-Quran Digital
         </title>
         <meta
           name="description"

@@ -153,7 +153,7 @@ export default function PageHeader({ title, goBack, surah }) {
 }
 
 PageHeader.defaultProps = {
-  title: "Al-Qur'an Digital",
+  title: "Al-Quran Digital",
   goBack: false,
   surah: null,
 };

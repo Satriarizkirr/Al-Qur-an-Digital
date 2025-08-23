@@ -25,7 +25,7 @@ export default function AllMenu() {
   return (
     <>
       <Head>
-        <title>Semua Menu | Al-Qur'an Digital</title>
+        <title>Semua Menu | Al-Quran Digital</title>
       </Head>
       <PageHeader title="Semua Menu" goBack />
       <Box as="main" p={{ base: 4, md: 6 }}>

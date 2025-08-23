@@ -20,7 +20,7 @@ function Surah({ allSurahList }) {
   return (
     <>
       <Head>
-        <title>Daftar Surah Al-Quran Beserta Terjemahan | Maos Quran</title>
+        <title>Daftar Surah Al-Quran Beserta Terjemahan | Al-Quran Digital</title>
         <meta
           name="description"
           content="Daftar Surah Al-Quran Beserta Terjemahan dan Tafsir"

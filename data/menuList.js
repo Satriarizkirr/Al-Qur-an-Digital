@@ -1,7 +1,7 @@
 export const menuList = [
  {
       text: "Daftar Surah",
-      description: "114 Surah Al-Qur'an",
+      description: "114 Surah Al-Quran",
       icon: "/images/surat.png",
       href: "/surah",
       colorScheme: "green",
@@ -16,8 +16,8 @@ export const menuList = [
       gradient: "linear(45deg, teal.400, teal.600)",
     },
     {
-      text: "Do'a Harian",
-      description: "Kumpulan Do'a",
+      text: "Doa Harian",
+      description: "Kumpulan Doa",
       icon: "/images/doa-harian.svg",
       href: "/doa-harian",
       colorScheme: "orange",
@@ -40,7 +40,7 @@ export const menuList = [
       gradient: "linear(45deg, purple.400, purple.600)",
     },
     {
-      text: "Do'a Tahlil",
+      text: "Doa Tahlil",
       description: "Bacaan Tahlil",
       icon: "/images/doa-tahlil.png",
       href: "/tahlil",

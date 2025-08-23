@@ -21,11 +21,11 @@ function DailyPrayer() {
         <title>Kumpulan Do&apos;a harian beserta terjemahan</title>
         <meta
           name="description"
-          content="Daftar lengkap Do'a harian beserta terjemahan"
+          content="Daftar lengkap Doa harian beserta terjemahan"
         />
       </Head>
 
-      <PageHeader title="Do'a Harian" goBack />
+      <PageHeader title="Doa Harian" goBack />
       <Box px="15px" pt="20px" as="main">
         <SearchInput
           value={searchTerm}
@@ -38,7 +38,7 @@ function DailyPrayer() {
             color={colorMode === "dark" ? "gray.200" : "gray.600"}
             mt="20px"
           >
-            {"Do'a yang anda cari tidak ditemukan!"}
+            {"Doa yang anda cari tidak ditemukan!"}
           </Text>
         )}
         <PrayerList items={prayerList} />

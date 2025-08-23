@@ -272,7 +272,7 @@ export default function Home() {
                     Pilihan Menu
                   </Heading>
                   <Text color="gray.500" fontSize="md">
-                    Jelajahi berbagai fitur Al-Qur'an Digital
+                    Jelajahi berbagai fitur Al-Quran Digital
                   </Text>
                 </VStack>
                 <Icon as={FiStar} color="yellow.400" boxSize="24px" />
@@ -444,7 +444,7 @@ export default function Home() {
                    Mulai Perjalanan Spiritual Anda
                  </Heading>
                  <Text color="gray.500" maxW="md">
-                   Jadikan Al-Qur'an sebagai pedoman hidup dengan membacanya secara rutin setiap hari
+                   Jadikan Al-Quran sebagai pedoman hidup dengan membacanya secara rutin setiap hari
                  </Text>
                  <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
                    <Button
@@ -465,7 +465,7 @@ export default function Home() {
                      size="lg"
                      borderRadius="xl"
                    >
-                     Lihat Do'a Harian
+                     Lihat Doa Harian
                    </Button>
                  </Stack>
                </VStack>

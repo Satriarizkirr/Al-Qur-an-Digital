@@ -24,7 +24,7 @@ function JuzAmma({ allSurahList }) {
         <title>Al-Quran Juz 30 (Juz Amma) | Al-Quran Digital</title>
         <meta
           name="description"
-          content="Baca surah-surah dalam Juz 30 (Juz Amma) dari Al-Qur'an."
+          content="Baca surah-surah dalam Juz 30 (Juz Amma) dari Al-Quran."
         />
       </Head>
 
