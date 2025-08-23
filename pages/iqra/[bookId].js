@@ -45,7 +45,7 @@ function IqraReader({ book }) {
   return (
     <>
       <Head>
-        <title>{book.title} | Al-Qur'an Digital</title>
+        <title>{book.title} | Al-Quran Digital</title>
       </Head>
 
       <PageHeader title={book.title} goBack />

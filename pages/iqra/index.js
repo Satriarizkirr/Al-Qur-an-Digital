@@ -19,7 +19,7 @@ function IqraSelection() {
   return (
     <>
       <Head>
-        <title>Belajar Iqra' | Al-Qur'an Digital</title>
+        <title>Belajar Iqra' | Al-Quran Digital</title>
       </Head>
 
       <PageHeader title="Belajar Iqra'" goBack />

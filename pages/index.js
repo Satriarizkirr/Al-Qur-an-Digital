@@ -196,7 +196,7 @@ export default function Home() {
                     maxW="lg"
                     textShadow="1px 1px 2px rgba(0,0,0,0.5)"
                   >
-                    Sudahkahkah Anda Membaca Al-Qur'an Hari Ini?
+                    Sudahkahkah Anda Membaca Al-Quran Hari Ini?
                   </Text>
                 </VStack>
                 {verseLastRead && verseLastRead.nomor && (
