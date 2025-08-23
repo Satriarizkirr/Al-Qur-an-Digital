@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "Iqra' 1",
+    "description": "Pengenalan huruf Hijaiyah",
+    "totalPages": 44
+  },
+  {
+    "id": 2,
+    "title": "Iqra' 2",
+    "description": "Sambung huruf dan bacaan panjang (mad)",
+    "totalPages": 44
+  },
+  {
+    "id": 3,
+    "title": "Iqra' 3",
+    "description": "Bacaan kasrah, dhammah, dan mad",
+    "totalPages": 44
+  },
+  {
+    "id": 4,
+    "title": "Iqra' 4",
+    "description": "Bacaan tanwin, sukun, dan qalqalah",
+    "totalPages": 44
+  }
+]
