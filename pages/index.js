@@ -19,20 +19,21 @@ import {
   HStack,
   Icon,
 } from "@chakra-ui/react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { FiClock, FiBookOpen, FiStar, FiGrid } from "react-icons/fi";
 import PageHeader from "@/components/PageHeader";
 import { useLastReadStore } from "stores/LastRead";
 import { menuList } from "../data/menuList";
 
-// DITAMBAHKAN: Import Swiper untuk Carousel
+// Import Swiper untuk Carousel
 import { Swiper, SwiperSlide } from 'swiper/react';
-// PERBAIKAN: Hapus 'Navigation' dari sini
 import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
-import 'swiper/css/navigation';
+
+// PENAMBAHAN: Import komponen pencarian AI yang sudah kita buat
+import SejarahIslamSearch from '../components/SejarahIslamSearch';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -43,14 +44,11 @@ export default function Home() {
 
   const bannerImages = [
     '/images/banner.jpg',
-    '/images/banner1.jpg', // Pastikan gambar ini ada
-
+    '/images/banner1.jpg',
   ];
   
-  // Ambil hanya 5 item pertama untuk ditampilkan di beranda
   const featuredMenuList = menuList.slice(0, 5);
 
-  // ... (variants animation tidak diubah)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -97,7 +95,6 @@ export default function Home() {
     <>
       <Head>
         <title>Al-Quran Online Terjemahan dan Tafsir Ayat | Al-Quran Digital</title>
-        {/* ... meta tags ... */}
       </Head>
 
       <PageHeader />
@@ -122,18 +119,14 @@ export default function Home() {
               overflow="hidden"
               boxShadow="xl"
               sx={{
-                // Hapus styling untuk tombol navigasi karena tombolnya dihilangkan
                 '.swiper-pagination-bullet-active': {
                   background: 'white',
                 },
               }}
             >
               <Swiper
-                // PERBAIKAN: Hapus 'Navigation' dari modul
                 modules={[Autoplay, EffectFade, Pagination]}
                 effect="fade"
-                // PERBAIKAN: Hapus properti navigation={true}
-                // navigation={true} 
                 pagination={{ clickable: true }}
                 loop={true}
                 autoplay={{
@@ -155,7 +148,6 @@ export default function Home() {
                 ))}
               </Swiper>
 
-              {/* ... (Bagian tulisan di depan tidak diubah) ... */}
               <Box
                 position="absolute"
                 top={0} left={0} right={0} bottom={0}
@@ -223,7 +215,7 @@ export default function Home() {
             </Box>
           </MotionBox>
 
-          {/* Stats Section (TIDAK DIUBAH) */}
+          {/* Stats Section */}
           <MotionBox variants={itemVariants}>
             <HStack
               spacing={{ base: 4, md: 8 }}
@@ -263,7 +255,7 @@ export default function Home() {
             </HStack>
           </MotionBox>
 
-          {/* PERUBAHAN DI SINI: Enhanced Menu Section dengan Fitur "Lihat Semua" */}
+          {/* Menu Section */}
           <MotionBox variants={itemVariants}>
             <VStack w="full" spacing={6}>
               <HStack w="full" justify="space-between" align="center">
@@ -277,13 +269,11 @@ export default function Home() {
                 </VStack>
                 <Icon as={FiStar} color="yellow.400" boxSize="24px" />
               </HStack>
-
               <Grid
                 templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }}
                 gap={6}
                 w="full"
               >
-                {/* Tampilkan 5 menu unggulan */}
                 {featuredMenuList.map((menu, index) => (
                   <MotionBox
                     key={menu.text}
@@ -291,77 +281,32 @@ export default function Home() {
                     initial="rest"
                     whileHover="hover"
                     animate="rest"
-                    custom={index}
-                    layout
                   >
-                    <Link
-                      as={NextLink}
-                      href={menu.href}
-                      _hover={{ textDecoration: "none" }}
-                      h="full"
-                    >
+                    <Link as={NextLink} href={menu.href} _hover={{ textDecoration: "none" }} h="full">
                       <VStack
-                        spacing={4}
-                        p={6}
+                        spacing={4} p={6}
                         bg={colorMode === "dark" ? "gray.800" : "white"}
-                        borderRadius="xl"
-                        h="full"
-                        position="relative"
-                        overflow="hidden"
-                        border="1px solid"
+                        borderRadius="xl" h="full" position="relative"
+                        overflow="hidden" border="1px solid"
                         borderColor={colorMode === "dark" ? "gray.700" : "gray.100"}
                         transition="all 0.3s ease"
                       >
-                        <Box
-                          position="absolute"
-                          top={0}
-                          left={0}
-                          right={0}
-                          h="4px"
-                          bgGradient={menu.gradient}
-                        />
+                        <Box position="absolute" top={0} left={0} right={0} h="4px" bgGradient={menu.gradient} />
                         <Circle
                           size="64px"
-                          bg={
-                            colorMode === "dark"
-                              ? `${menu.colorScheme}.900`
-                              : `${menu.colorScheme}.50`
-                          }
+                          bg={colorMode === "dark" ? `${menu.colorScheme}.900` : `${menu.colorScheme}.50`}
                           border="2px solid"
-                          borderColor={
-                            colorMode === "dark"
-                              ? `${menu.colorScheme}.700`
-                              : `${menu.colorScheme}.200`
-                          }
-                          position="relative"
-                          overflow="hidden"
+                          borderColor={colorMode === "dark" ? `${menu.colorScheme}.700` : `${menu.colorScheme}.200`}
+                          position="relative" overflow="hidden"
                         >
-                          <Box
-                            position="absolute"
-                            top={0} left={0} right={0} bottom={0}
-                            bgGradient={`linear(135deg, ${menu.colorScheme}.400, ${menu.colorScheme}.600)`}
-                            opacity={0.1}
-                          />
-                          <Image
-                            src={menu.icon}
-                            width={32}
-                            height={32}
-                            alt={menu.text}
-                          />
+                          <Box position="absolute" top={0} left={0} right={0} bottom={0} bgGradient={`linear(135deg, ${menu.colorScheme}.400, ${menu.colorScheme}.600)`} opacity={0.1} />
+                          <Image src={menu.icon} width={32} height={32} alt={menu.text} />
                         </Circle>
                         <VStack spacing={2} textAlign="center">
-                          <Text
-                            fontSize="sm"
-                            fontWeight="bold"
-                            color={colorMode === "dark" ? "white" : "gray.800"}
-                          >
+                          <Text fontSize="sm" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.800"}>
                             {menu.text}
                           </Text>
-                          <Text
-                            fontSize="xs"
-                            color="gray.500"
-                            lineHeight="1.4"
-                          >
+                          <Text fontSize="xs" color="gray.500" lineHeight="1.4">
                             {menu.description}
                           </Text>
                         </VStack>
@@ -369,52 +314,25 @@ export default function Home() {
                     </Link>
                   </MotionBox>
                 ))}
-
-                {/* Kartu "Lihat Semua" */}
-                <MotionBox
-                  variants={cardVariants}
-                  initial="rest"
-                  whileHover="hover"
-                  animate="rest"
-                  layout
-                >
-                  <Link
-                    as={NextLink}
-                    href="/menu" // Arahkan ke halaman semua menu
-                    _hover={{ textDecoration: "none" }}
-                    h="full"
-                  >
+                <MotionBox variants={cardVariants} initial="rest" whileHover="hover" animate="rest">
+                  <Link as={NextLink} href="/menu" _hover={{ textDecoration: "none" }} h="full">
                     <VStack
-                      spacing={4}
-                      p={6}
+                      spacing={4} p={6}
                       bg={colorMode === "dark" ? "gray.800" : "gray.50"}
-                      borderRadius="xl"
-                      h="full"
-                      justifyContent="center"
+                      borderRadius="xl" h="full" justifyContent="center"
                       border="2px dashed"
                       borderColor={colorMode === "dark" ? "gray.600" : "gray.300"}
                       transition="all 0.3s ease"
                       _hover={{ borderColor: "teal.400" }}
                     >
-                      <Circle
-                        size="64px"
-                        bg={colorMode === "dark" ? "gray.700" : "gray.200"}
-                      >
+                      <Circle size="64px" bg={colorMode === "dark" ? "gray.700" : "gray.200"}>
                         <Icon as={FiGrid} boxSize="32px" color="gray.500" />
                       </Circle>
                       <VStack spacing={2} textAlign="center">
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color={colorMode === "dark" ? "white" : "gray.800"}
-                        >
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.800"}>
                           Lihat Semua
                         </Text>
-                        <Text
-                          fontSize="xs"
-                          color="gray.500"
-                          lineHeight="1.4"
-                        >
+                        <Text fontSize="xs" color="gray.500" lineHeight="1.4">
                           Fitur lainnya
                         </Text>
                       </VStack>
@@ -425,52 +343,59 @@ export default function Home() {
             </VStack>
           </MotionBox>
           
-          {/* Call to Action Section (TIDAK DIUBAH) */}
+          {/* ================================================ */}
+          {/* PENAMBAHAN: Bagian Pencarian AI Ditaruh di Sini */}
+          {/* ================================================ */}
           <MotionBox variants={itemVariants}>
-             <Box
-               bg={
-                 colorMode === "dark"
-                   ? "linear-gradient(135deg, #1A202C 0%, #2D3748 100%)"
-                   : "linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%)"
-               }
-               borderRadius="2xl"
-               p={8}
-               textAlign="center"
-               border="1px solid"
-               borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
-             >
-               <VStack spacing={4}>
-                 <Heading size="md" color={colorMode === "dark" ? "white" : "gray.800"}>
-                   Mulai Perjalanan Spiritual Anda
-                 </Heading>
-                 <Text color="gray.500" maxW="md">
-                   Jadikan Al-Quran sebagai pedoman hidup dengan membacanya secara rutin setiap hari
-                 </Text>
-                 <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
-                   <Button
-                     as={NextLink}
-                     href="/surah"
-                     colorScheme="green"
-                     size="lg"
-                     leftIcon={<FiBookOpen />}
-                     borderRadius="xl"
-                   >
-                     Mulai Membaca
-                   </Button>
-                   <Button
-                     as={NextLink}
-                     href="/doa-harian"
-                     variant="outline"
-                     colorScheme="teal"
-                     size="lg"
-                     borderRadius="xl"
-                   >
-                     Lihat Doa Harian
-                   </Button>
-                 </Stack>
-               </VStack>
-             </Box>
-           </MotionBox>
+            <SejarahIslamSearch />
+          </MotionBox>
+          
+          {/* Call to Action Section */}
+          <MotionBox variants={itemVariants}>
+            <Box
+              bg={
+                colorMode === "dark"
+                  ? "linear-gradient(135deg, #1A202C 0%, #2D3748 100%)"
+                  : "linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%)"
+              }
+              borderRadius="2xl"
+              p={8}
+              textAlign="center"
+              border="1px solid"
+              borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+            >
+              <VStack spacing={4}>
+                <Heading size="md" color={colorMode === "dark" ? "white" : "gray.800"}>
+                  Mulai Perjalanan Spiritual Anda
+                </Heading>
+                <Text color="gray.500" maxW="md">
+                  Jadikan Al-Quran sebagai pedoman hidup dengan membacanya secara rutin setiap hari
+                </Text>
+                <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
+                  <Button
+                    as={NextLink}
+                    href="/surah"
+                    colorScheme="green"
+                    size="lg"
+                    leftIcon={<FiBookOpen />}
+                    borderRadius="xl"
+                  >
+                    Mulai Membaca
+                  </Button>
+                  <Button
+                    as={NextLink}
+                    href="/doa-harian"
+                    variant="outline"
+                    colorScheme="teal"
+                    size="lg"
+                    borderRadius="xl"
+                  >
+                    Lihat Doa Harian
+                  </Button>
+                </Stack>
+              </VStack>
+            </Box>
+          </MotionBox>
         </MotionFlex>
       </Container>
     </>
