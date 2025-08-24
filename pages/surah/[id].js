@@ -1,5 +1,3 @@
-// pages/surah/[id].js
-
 import Head from "next/head";
 import { useState } from "react";
 import NextLink from "next/link";
@@ -17,6 +15,11 @@ import {
   StackDivider,
   IconButton,
   HStack,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Button,
 } from "@chakra-ui/react";
 import {
   IoPlayOutline,
@@ -24,9 +27,10 @@ import {
   IoBookmarkOutline,
   IoChevronBack,
   IoChevronForward,
+  IoChevronDown,
 } from "react-icons/io5";
 import { useLastReadStore } from "stores/LastRead";
-import { usePreferenceStore } from "stores/Preference";
+import { usePreferenceStore, QARI_LIST } from "stores/Preference";
 import PageHeader from "@/components/PageHeader";
 import BackToTop from "@/components/BackToTop";
 
@@ -35,7 +39,7 @@ function Surah({ surah, prevSurah, nextSurah }) {
   const [playing, setPlaying] = useState(false);
   const { colorMode } = useColorMode();
   const { markLastRead } = useLastReadStore();
-  const { preference } = usePreferenceStore();
+  const { preference, setQari } = usePreferenceStore();
   const toast = useToast();
   const { ayat: verses } = surah;
 
@@ -56,7 +60,6 @@ function Surah({ surah, prevSurah, nextSurah }) {
     });
   };
 
-  // FUNGSI INI DIPINDAHKAN KE DALAM KOMPONEN AGAR BISA MENGAKSES STATE & PROPS
   const handleBookmarkClick = (verseNumber) => {
     markLastRead({
       nama: surah.nama,
@@ -71,6 +74,13 @@ function Surah({ surah, prevSurah, nextSurah }) {
       status: "success",
       isClosable: true,
     });
+  };
+
+  const handleQariChange = (qariId) => {
+    setQari(qariId);
+    const audios = document.querySelectorAll("audio");
+    audios.forEach((audio) => audio.pause());
+    setPlaying(false);
   };
 
   return (
@@ -111,6 +121,34 @@ function Surah({ surah, prevSurah, nextSurah }) {
           <Text fontSize="sm" color="whiteAlpha.800">
             {surah.tempatTurun} • {surah.jumlahAyat} Ayat
           </Text>
+
+          <Box mt="20px" w="full" maxW="280px">
+            <Menu>
+              <MenuButton
+                as={Button}
+                rightIcon={<IoChevronDown />}
+                colorScheme="blackAlpha"
+                size="sm"
+                w="full"
+                textAlign="left"
+              >
+                <Text isTruncated>{QARI_LIST[preference.qari]}</Text>
+              </MenuButton>
+              <MenuList color={colorMode === "dark" ? "white" : "gray.800"} zIndex={1000}>
+                {Object.entries(QARI_LIST).map(([id, name]) => (
+                  <MenuItem
+                    key={id}
+                    onClick={() => handleQariChange(id)}
+                    fontWeight={preference.qari === id ? "bold" : "normal"}
+                    bg={preference.qari === id ? (colorMode === "dark" ? "teal.700" : "teal.100") : "transparent"}
+                  >
+                    {name}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Menu>
+          </Box>
+
           {surah.bismillah && (
             <Text
               mt="25px"
@@ -126,6 +164,7 @@ function Surah({ surah, prevSurah, nextSurah }) {
 
         {/* Daftar Ayat */}
         <VStack
+          key={preference.qari}
           divider={
             <StackDivider
               borderColor={colorMode === "dark" ? "gray.600" : "gray.200"}
@@ -163,10 +202,12 @@ function Surah({ surah, prevSurah, nextSurah }) {
                   colorScheme="teal"
                   variant="ghost"
                   isRound
+                  // PENAMBAHAN: Menghilangkan 'glow' atau bayangan saat tombol ditekan/fokus
+                  _focus={{ boxShadow: "none" }}
                 />
                 <VisuallyHidden>
                   <audio
-                    src={verse.audio["01"]}
+                    src={verse.audio[preference.qari || "05"]}
                     id={`audio-${verse.nomorAyat}`}
                     onEnded={() => setPlaying(false)}
                   ></audio>
@@ -178,61 +219,33 @@ function Surah({ surah, prevSurah, nextSurah }) {
                   colorScheme="teal"
                   variant="ghost"
                   isRound
+                  // PENAMBAHAN: Menghilangkan 'glow' atau bayangan saat tombol ditekan/fokus
+                  _focus={{ boxShadow: "none" }}
                 />
               </Flex>
               <Box pt="30px">
-                <Text
-                  fontFamily="Amiri, serif"
-                  dir="rtl"
-                  fontSize={{ base: "2xl", md: "3xl" }}
-                  color={colorMode === "dark" ? "gray.100" : "gray.800"}
-                  lineHeight="2.5"
-                >
+                <Text fontFamily="Amiri, serif" dir="rtl" fontSize={{ base: "2xl", md: "3xl" }} color={colorMode === "dark" ? "gray.100" : "gray.800"} lineHeight="2.5">
                   {verse.teksArab}
                 </Text>
-                <Text
-                  mt="35px"
-                  color={colorMode === "dark" ? "gray.400" : "gray.500"}
-                  fontSize="md"
-                  fontStyle="italic"
-                >
+                <Text mt="35px" color={colorMode === "dark" ? "gray.400" : "gray.500"} fontSize="md" fontStyle="italic">
                   {verse.teksLatin}
                 </Text>
-
                 {preference.translation && (
                   <Box mt="20px">
-                    <Text
-                      mb="5px"
-                      color={colorMode === "dark" ? "gray.100" : "gray.800"}
-                      fontWeight="600"
-                    >
+                    <Text mb="5px" color={colorMode === "dark" ? "gray.100" : "gray.800"} fontWeight="600">
                       Terjemahan:
                     </Text>
-                    <Text
-                      color={colorMode === "dark" ? "gray.200" : "gray.700"}
-                      fontSize="sm"
-                      fontStyle="italic"
-                    >
+                    <Text color={colorMode === "dark" ? "gray.200" : "gray.700"} fontSize="sm" fontStyle="italic">
                       "{verse.teksIndonesia}"
                     </Text>
                   </Box>
                 )}
-                
-                {/* DITAMBAHKAN KEMBALI: Blok untuk menampilkan tafsir */}
                 {preference.tafsir && (
                   <Box mt="20px">
-                    <Text
-                      mb="5px"
-                      color={colorMode === "dark" ? "gray.100" : "gray.800"}
-                      fontWeight="600"
-                    >
+                    <Text mb="5px" color={colorMode === "dark" ? "gray.100" : "gray.800"} fontWeight="600">
                       Tafsir (Kemenag):
                     </Text>
-                    <Text
-                      color={colorMode === "dark" ? "gray.300" : "gray.600"}
-                      fontSize="sm"
-                      lineHeight="tall"
-                    >
+                    <Text color={colorMode === "dark" ? "gray.300" : "gray.600"} fontSize="sm" lineHeight="tall">
                       {verse.tafsir}
                     </Text>
                   </Box>
@@ -290,7 +303,7 @@ function Surah({ surah, prevSurah, nextSurah }) {
 
 export default Surah;
 
-// FUNGSI UNTUK GENERATE SEMUA HALAMAN SURAH
+// FUNGSI getStaticPaths dan getStaticProps TIDAK BERUBAH
 export async function getStaticPaths() {
   const response = await fetch("https://equran.id/api/v2/surat");
   const resultJson = await response.json();
@@ -303,11 +316,9 @@ export async function getStaticPaths() {
   return { paths, fallback: false };
 }
 
-// FUNGSI UNTUK MENGAMBIL DATA TIAP SURAH (TERMASUK TAFSIR)
 export async function getStaticProps({ params }) {
   const { id } = params;
 
-  // 1. Ambil data surah dan tafsir secara bersamaan
   const [surahRes, tafsirRes] = await Promise.all([
     fetch(`https://equran.id/api/v2/surat/${id}`),
     fetch(`https://equran.id/api/v2/tafsir/${id}`),
@@ -319,13 +330,12 @@ export async function getStaticProps({ params }) {
   ]);
 
   if (!surahJson.data || !tafsirJson.data) {
-    return { notFound: true }; // Handle jika API gagal
+    return { notFound: true };
   }
   
   const surah = surahJson.data;
   const tafsir = tafsirJson.data;
 
-  // 2. Gabungkan data tafsir ke dalam setiap ayat
   const mergedAyat = surah.ayat.map(ayat => {
     const tafsirAyat = tafsir.tafsir.find(t => t.ayat === ayat.nomorAyat);
     return {
@@ -336,7 +346,6 @@ export async function getStaticProps({ params }) {
   
   surah.ayat = mergedAyat;
 
-  // Logika untuk surah sebelum dan sesudahnya
   let prevSurah = null;
   if (id > 1) {
     const prevSurahRes = await fetch(`https://equran.id/api/v2/surat/${Number(id) - 1}`);
@@ -357,6 +366,6 @@ export async function getStaticProps({ params }) {
       prevSurah,
       nextSurah,
     },
-    revalidate: 3600, // Re-generate halaman setiap jam
+    revalidate: 3600,
   };
 }

@@ -1,21 +1,41 @@
-import create from "zustand";
+import create from "zustand"; // <-- PERUBAHAN DI SINI
 import { persist } from "zustand/middleware";
+
+// Daftar Qari yang tersedia dari API untuk komponen pilihan
+export const QARI_LIST = {
+  "01": "Abdullah Al-Juhany",
+  "02": "Abdul Muhsin Al-Qasim ",
+  "03": "Abdurrahman as-Sudais ",
+  "04": "Ibrahim Al-Akhdar ",
+  "05": "Misyari Rasyid Al-Afasi ",
+};
 
 export const usePreferenceStore = create(
   persist(
     (set) => ({
-      preference: { translation: true, tafsir: false },
+      preference: {
+        translation: true,
+        tafsir: false,
+        qari: "05",
+      },
+      setQari: (qariId) =>
+        set((prev) => ({
+          preference: {
+            ...prev.preference,
+            qari: qariId,
+          },
+        })),
       showTranslation: () =>
         set((prev) => ({
           preference: {
+            ...prev.preference,
             translation: !prev.preference.translation,
-            tafsir: prev.preference.tafsir,
           },
         })),
       showTafsir: () =>
         set((prev) => ({
           preference: {
-            translation: prev.preference.translation,
+            ...prev.preference,
             tafsir: !prev.preference.tafsir,
           },
         })),
