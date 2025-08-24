@@ -24,7 +24,7 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load image dengan multiple format attempts
+  // Load image dengan debugging yang lebih baik
   const loadImage = () => {
     setLoading(true);
     setError(null);
@@ -32,32 +32,41 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
     // Format nomor halaman dengan leading zero (01, 02, etc)
     const pageNumber = currentPage.toString().padStart(2, '0');
     
-    // Array of possible paths to try (berdasarkan struktur GitHub)
+    // Berdasarkan screenshot GitHub: Iqra1/Iqra1-01.png format
     const possiblePaths = [
-      `/images/Iqra${bookId}/Iqra${bookId}-${pageNumber}.png`, // Format GitHub: Iqra1/Iqra1-01.png
-      `/images/Iqra${bookId}/iqra${bookId}-${pageNumber}.png`, // Backup format 1
-      `/images/Iqra${bookId}/page-${currentPage}.jpg`, // Alternative format
-      `/images/iqra${bookId}/Iqra${bookId}-${pageNumber}.png`, // Lowercase folder
-      `/images/iqra${bookId}/iqra${bookId}-${pageNumber}.png`, // All lowercase
+      `/images/Iqra${bookId}/Iqra${bookId}-${pageNumber}.png`,
+      `/images/Iqra${bookId}/iqra${bookId}-${pageNumber}.png`,
+      `/images/iqra${bookId}/Iqra${bookId}-${pageNumber}.png`,
+      `/images/iqra${bookId}/iqra${bookId}-${pageNumber}.png`,
+      `/images/Iqra${bookId}/page-${currentPage}.png`,
+      `/images/Iqra${bookId}/page-${currentPage}.jpg`,
     ];
+    
+    console.log('Attempting to load image for bookId:', bookId, 'page:', currentPage);
+    console.log('Trying paths:', possiblePaths);
     
     // Try each path sequentially
     const tryPaths = (pathIndex = 0) => {
       if (pathIndex >= possiblePaths.length) {
-        setError(`Halaman ${currentPage} tidak ditemukan`);
+        console.error('All paths failed for bookId:', bookId, 'page:', currentPage);
+        setError(`Halaman ${currentPage} tidak ditemukan. Semua path gagal.`);
         setLoading(false);
         return;
       }
       
       const imagePath = possiblePaths[pathIndex];
+      console.log(`Trying path ${pathIndex + 1}/${possiblePaths.length}:`, imagePath);
+      
       const img = document.createElement('img');
       
       img.onload = () => {
+        console.log('SUCCESS! Image loaded from:', imagePath);
         setImageUrl(imagePath);
         setLoading(false);
       };
       
-      img.onerror = () => {
+      img.onerror = (error) => {
+        console.error(`Failed to load: ${imagePath}`, error);
         // Try next path
         tryPaths(pathIndex + 1);
       };
@@ -181,11 +190,18 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
               📄 {error}
             </Text>
             <Text mb={4} color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-              Pastikan struktur file sesuai dengan yang ada di GitHub
+              BookId: {bookId}, Page: {currentPage}
             </Text>
-            <Text fontSize="sm" color={colorMode === "dark" ? "gray.500" : "gray.500"}>
-              Mencoba path: /images/Iqra{bookId}/Iqra{bookId}-{currentPage.toString().padStart(2, '0')}.png
+            <Text fontSize="xs" color={colorMode === "dark" ? "gray.500" : "gray.500"}>
+              Cek console untuk detail debugging
             </Text>
+            <Button
+              size="sm"
+              mt={2}
+              onClick={() => window.open(`https://github.com/Satriarizkirr/Al-Qur-an-Digital/tree/main/public/images/Iqra${bookId}`, '_blank')}
+            >
+              Cek GitHub Folder
+            </Button>
           </Box>
         )}
         
