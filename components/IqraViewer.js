@@ -1,10 +1,11 @@
-// File: components/IqraViewer.js
-
 import { Box, Spinner, VStack, Text, useColorMode } from "@chakra-ui/react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-// Konfigurasi worker
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+// Pake CDN kalau di production, pake local kalau di development
+const isProd = process.env.NODE_ENV === "production";
+pdfjs.GlobalWorkerOptions.workerSrc = isProd
+  ? `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
+  : "/pdf.worker.min.js";
 
 export default function IqraViewer({ file, currentPage, onDocumentLoadSuccess }) {
   const { colorMode } = useColorMode();
@@ -17,8 +18,6 @@ export default function IqraViewer({ file, currentPage, onDocumentLoadSuccess })
       borderRadius="lg"
       boxShadow="lg"
       overflow="hidden"
-      // PERBAIKAN: Beri tinggi minimal yang cukup besar untuk mencegah 'lompat'
-      // Nilai ini bisa disesuaikan, tapi 50vh (50% tinggi layar) biasanya aman
       minH={{ base: "50vh", md: "60vh" }}
       display="flex"
       justifyContent="center"
@@ -37,8 +36,8 @@ export default function IqraViewer({ file, currentPage, onDocumentLoadSuccess })
           </VStack>
         }
       >
-        <Page 
-          pageNumber={currentPage} 
+        <Page
+          pageNumber={currentPage}
           renderTextLayer={false}
           renderAnnotationLayer={false}
         />
