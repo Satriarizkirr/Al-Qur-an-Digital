@@ -1,98 +1,127 @@
-import { Box, useColorMode, Text, Button, Image as ChakraImage, Spinner } from "@chakra-ui/react"; // PERUBAHAN 1: Ganti nama 'Image' dari Chakra UI
+import { Box, useColorMode, Text, Button, Image, Spinner } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 
 export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess }) {
   const { colorMode } = useColorMode();
+  const [isMobile, setIsMobile] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(0);
 
-  // FUNGSI INI SUDAH DISIMPAN TAPI TIDAK DIPAKAI DI JSX, JADI SAYA HAPUS SEMENTARA
-  // const [isMobile, setIsMobile] = useState(false);
-  // useEffect(() => {
-  //   const checkMobile = () => { /* ... */ };
-  //   checkMobile();
-  //   window.addEventListener('resize', checkMobile);
-  //   return () => window.removeEventListener('resize', checkMobile);
-  // }, []);
-
-  // Efek ini akan berjalan setiap kali buku atau halaman berubah
   useEffect(() => {
-    // Pastikan kita punya bookId dan currentPage sebelum melakukan apa pun
-    if (!bookId || !currentPage) {
-        setLoading(false);
-        return;
-    }
+    // Detect mobile
+    const checkMobile = () => {
+      if (typeof window !== 'undefined') {
+        const mobile = window.innerWidth <= 768;
+        setIsMobile(mobile);
+      }
+    };
     
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Load image dengan multiple format attempts
+  const loadImage = () => {
     setLoading(true);
     setError(null);
     
-    // =======================================================================
-    // PERUBAHAN 2: Sederhanakan path gambar. Hapus tebak-tebakan.
-    // Kita tetapkan SATU format nama file yang benar dan konsisten.
-    // =======================================================================
-    // PENTING: Pastikan struktur folder dan file kamu di dalam folder `public`
-    // SAMA PERSIS SEPERTI INI (semua huruf kecil untuk amannya):
-    // -> public/images/iqra1/iqra1-01.png
-    // -> public/images/iqra2/iqra2-01.png
-    // -> dst...
-    // =======================================================================
-
+    // Format nomor halaman dengan leading zero (01, 02, etc)
     const pageNumber = currentPage.toString().padStart(2, '0');
-    const imagePath = `/images/iqra${bookId}/iqra${bookId}-${pageNumber}.png`;
-
-    console.log(`Mencoba memuat gambar dari path: ${imagePath}`);
-
-    // Perintah 'new Image()' sekarang aman karena namanya tidak bentrok lagi
-    const img = new Image();
     
-    img.onload = () => {
-      console.log(`SUKSES! Gambar dimuat dari: ${imagePath}`);
-      setImageUrl(imagePath);
-      setLoading(false);
+    // Array of possible paths to try (berdasarkan struktur GitHub)
+    const possiblePaths = [
+      `/images/Iqra${bookId}/Iqra${bookId}-${pageNumber}.png`, // Format GitHub: Iqra1/Iqra1-01.png
+      `/images/Iqra${bookId}/iqra${bookId}-${pageNumber}.png`, // Backup format 1
+      `/images/Iqra${bookId}/page-${currentPage}.jpg`, // Alternative format
+      `/images/iqra${bookId}/Iqra${bookId}-${pageNumber}.png`, // Lowercase folder
+      `/images/iqra${bookId}/iqra${bookId}-${pageNumber}.png`, // All lowercase
+    ];
+    
+    // Try each path sequentially
+    const tryPaths = (pathIndex = 0) => {
+      if (pathIndex >= possiblePaths.length) {
+        setError(`Halaman ${currentPage} tidak ditemukan`);
+        setLoading(false);
+        return;
+      }
+      
+      const imagePath = possiblePaths[pathIndex];
+      const img = document.createElement('img');
+      
+      img.onload = () => {
+        setImageUrl(imagePath);
+        setLoading(false);
+      };
+      
+      img.onerror = () => {
+        // Try next path
+        tryPaths(pathIndex + 1);
+      };
+      
+      img.src = imagePath;
     };
     
-    img.onerror = () => {
-      const errorMessage = `Gagal memuat: ${imagePath}. Pastikan file ada & nama sudah benar (termasuk huruf besar/kecil).`;
-      console.error(errorMessage);
-      setError(errorMessage);
-      setLoading(false);
-    };
-    
-    img.src = imagePath;
+    tryPaths();
+  };
 
-    // Fungsi cleanup untuk mencegah error
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [bookId, currentPage]);
-
-
-  // NOTE: Fungsi 'calculateTotalPages' ini sangat tidak efisien karena melakukan banyak 'fetch'.
-  // Untuk sementara kita biarkan, tapi jika ingin lebih cepat, jumlah halaman sebaiknya
-  // didefinisikan secara manual seperti di solusi saya sebelumnya.
+  // Hitung total pages dengan multiple format checking
   useEffect(() => {
     const calculateTotalPages = async () => {
       let pages = 0;
-      const basePath = `/images/iqra${bookId}`; // Kita pakai satu format path yang konsisten
-      let foundPages = 0;
-
-      for (let i = 1; i <= 40; i++) { // Maksimal cek 40 halaman
-        try {
-          const pageNumber = i.toString().padStart(2, '0');
-          const format = `${basePath}/iqra${bookId}-${pageNumber}.png`;
-          const response = await fetch(format, { method: 'HEAD' });
-          if (response.ok) {
-            foundPages = i;
-          } else {
-            break; // Berhenti jika halaman tidak ditemukan
+      
+      // Array of possible folder structures
+      const possibleBasePaths = [
+        `/images/Iqra${bookId}`,
+        `/images/iqra${bookId}`,
+      ];
+      
+      for (const basePath of possibleBasePaths) {
+        let foundPages = 0;
+        
+        for (let i = 1; i <= 40; i++) {
+          try {
+            const pageNumber = i.toString().padStart(2, '0');
+            
+            // Try different naming conventions
+            const namingFormats = [
+              `${basePath}/Iqra${bookId}-${pageNumber}.png`,
+              `${basePath}/iqra${bookId}-${pageNumber}.png`,
+              `${basePath}/page-${i}.jpg`,
+            ];
+            
+            let pageFound = false;
+            for (const format of namingFormats) {
+              try {
+                const response = await fetch(format, { method: 'HEAD' });
+                if (response.ok) {
+                  foundPages = i;
+                  pageFound = true;
+                  break;
+                }
+              } catch (error) {
+                // Continue to next format
+                continue;
+              }
+            }
+            
+            if (!pageFound) {
+              break;
+            }
+          } catch {
+            break;
           }
-        } catch {
-          break;
+        }
+        
+        if (foundPages > pages) {
+          pages = foundPages;
         }
       }
-      pages = foundPages;
+      
+      setTotalPages(pages);
       if (onDocumentLoadSuccess && pages > 0) {
         onDocumentLoadSuccess({ numPages: pages });
       }
@@ -102,6 +131,12 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
       calculateTotalPages();
     }
   }, [bookId, onDocumentLoadSuccess]);
+
+  useEffect(() => {
+    if (bookId && currentPage) {
+      loadImage();
+    }
+  }, [bookId, currentPage]);
 
   return (
     <Box
@@ -121,11 +156,11 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
         bg={colorMode === "dark" ? "gray.600" : "gray.100"}
         textAlign="center"
         display="flex"
-        justifyContent="center" // Pusatkan teks
+        justifyContent="space-between"
         alignItems="center"
       >
         <Text fontSize="sm" color={colorMode === "dark" ? "gray.300" : "gray.600"}>
-          Halaman {currentPage}
+          Halaman {currentPage} {totalPages > 0 && `dari ${totalPages}`}
         </Text>
       </Box>
       
@@ -134,7 +169,9 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
         {loading && (
           <Box textAlign="center">
             <Spinner size="xl" color="blue.500" />
-            <Text mt={4}>Memuat halaman {currentPage}...</Text>
+            <Text mt={4} color={colorMode === "dark" ? "gray.300" : "gray.600"}>
+              Memuat halaman {currentPage}...
+            </Text>
           </Box>
         )}
         
@@ -143,12 +180,17 @@ export default function IqraViewer({ bookId, currentPage, onDocumentLoadSuccess 
             <Text color="red.500" mb={4} fontSize="lg">
               📄 {error}
             </Text>
+            <Text mb={4} color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+              Pastikan struktur file sesuai dengan yang ada di GitHub
+            </Text>
+            <Text fontSize="sm" color={colorMode === "dark" ? "gray.500" : "gray.500"}>
+              Mencoba path: /images/Iqra{bookId}/Iqra{bookId}-{currentPage.toString().padStart(2, '0')}.png
+            </Text>
           </Box>
         )}
         
-        {imageUrl && !loading && !error && (
-          // PERUBAHAN 3: Gunakan nama komponen 'ChakraImage' yang baru
-          <ChakraImage 
+        {imageUrl && !loading && (
+          <Image 
             src={imageUrl}
             alt={`Iqra ${bookId} - Halaman ${currentPage}`}
             maxW="100%"
