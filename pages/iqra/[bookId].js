@@ -30,12 +30,28 @@ const ChevronRightIcon = () => (
 
 export default function IqraBook() {
   const router = useRouter();
-  const { bookId } = router.query;
+  const { bookId: rawBookId } = router.query;
   const { colorMode } = useColorMode();
   
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Extract book number from bookId (handle both "2" and "iqra2" formats)
+  const getBookNumber = (bookId) => {
+    if (!bookId) return null;
+    
+    // If it's just a number like "2", return it
+    if (/^\d+$/.test(bookId)) {
+      return bookId;
+    }
+    
+    // If it's "iqra2", extract the number
+    const match = bookId.match(/iqra(\d+)/i);
+    return match ? match[1] : bookId;
+  };
+
+  const bookId = getBookNumber(rawBookId);
 
   // Reset page ketika bookId berubah
   useEffect(() => {
@@ -80,6 +96,13 @@ export default function IqraBook() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentPage, numPages]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Router query:', router.query);
+    console.log('Raw bookId:', rawBookId);
+    console.log('Processed bookId:', bookId);
+  }, [router.query, rawBookId, bookId]);
+
   if (!bookId) {
     return (
       <Layout>
@@ -106,7 +129,7 @@ export default function IqraBook() {
             </Button>
             
             <Heading size="lg" color={colorMode === "dark" ? "white" : "gray.800"}>
-              Iqra {bookId.replace("iqra", "")}
+              Iqra {bookId}
             </Heading>
             
             {!loading && (
@@ -191,8 +214,19 @@ export default function IqraBook() {
           {loading && (
             <Box textAlign="center" py={8}>
               <Text color={colorMode === "dark" ? "gray.300" : "gray.600"}>
-                Memuat Iqra {bookId.replace("iqra", "")}...
+                Memuat Iqra {bookId}...
               </Text>
+            </Box>
+          )}
+
+          {/* Debug Info (remove in production) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Box mt={4} p={3} bg="gray.100" borderRadius="md" fontSize="xs">
+              <Text>Debug Info:</Text>
+              <Text>Raw BookId: {rawBookId}</Text>
+              <Text>Processed BookId: {bookId}</Text>
+              <Text>Current Page: {currentPage}</Text>
+              <Text>Total Pages: {numPages}</Text>
             </Box>
           )}
         </VStack>
