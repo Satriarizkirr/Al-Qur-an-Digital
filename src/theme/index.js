@@ -1,4 +1,4 @@
-import { extendTheme, theme as base } from "@chakra-ui/react";
+import { extendTheme } from "@chakra-ui/react";
 
 const theme = extendTheme({
   styles: {
@@ -18,8 +18,8 @@ const theme = extendTheme({
     }),
   },
   fonts: {
-    body: `Inter, ${base.fonts?.body}`,
-    heading: `Montserrat, ${base.fonts?.heading}`,
+    body: `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif`,
+    heading: `Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif`,
   },
   config: {
     initialColorMode: "light",
