@@ -1,14 +1,11 @@
-import { Box, Spinner, VStack, Text, useColorMode } from "@chakra-ui/react";
+import { Box, Spinner, VStack, Text, useColorMode, useBreakpointValue } from "@chakra-ui/react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-// Pake CDN kalau di production, pake local kalau di development
-const isProd = process.env.NODE_ENV === "production";
-pdfjs.GlobalWorkerOptions.workerSrc = isProd
-  ? `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
-  : "/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
 export default function IqraViewer({ file, currentPage, onDocumentLoadSuccess }) {
   const { colorMode } = useColorMode();
+  const pageWidth = useBreakpointValue({ base: 300, sm: 400, md: 600 }); // dinamis
 
   return (
     <Box
@@ -38,6 +35,7 @@ export default function IqraViewer({ file, currentPage, onDocumentLoadSuccess })
       >
         <Page
           pageNumber={currentPage}
+          width={pageWidth} // <— KUNCI SUPAYA MOBILE KE-RENDER
           renderTextLayer={false}
           renderAnnotationLayer={false}
         />
