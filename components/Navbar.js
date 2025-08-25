@@ -11,8 +11,10 @@ import {
   IoHeart,
   IoSettingsOutline,
   IoSettings,
-  IoTimeOutline,    // ✅ Added missing import
-  IoTime,          // ✅ Added missing import
+  IoTimeOutline,
+  IoTime,
+  IoInformationCircleOutline,
+  IoInformationCircle,
 } from "react-icons/io5";
 
 const MotionLink = motion(Link);
@@ -35,9 +37,15 @@ export default function Navbar() {
     },
     {
       text: "Jadwal Sholat",
-      icon: { outline: IoTimeOutline, fill: IoTime },  // ✅ Fixed property structure
-      href: "/PrayerTimes",                             // ✅ Corrected href
+      icon: { outline: IoTimeOutline, fill: IoTime },
+      href: "/PrayerTimes",
       color: "purple.500",
+    },
+    {
+      text: "Tentang",
+      icon: { outline: IoInformationCircleOutline, fill: IoInformationCircle },
+      href: "/tentang",
+      color: "green.500",
     },
   ];
 
@@ -93,7 +101,7 @@ export default function Navbar() {
             >
               <MotionIcon
                 as={isActive ? icon.fill : icon.outline}
-                fontSize={{ base: "20px", sm: "22px" }}
+                fontSize={{ base: "18px", sm: "20px" }}
               />
               {text}
 

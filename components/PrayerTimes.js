@@ -232,7 +232,7 @@ export default function PrayerTimes() {
       {/* Header with date and location */}
       <VStack spacing={4} mb={6}>
         <Heading size="lg" textAlign="center">
-          Jadwal Sholat
+      
         </Heading>
         
         <VStack spacing={2} textAlign="center">
