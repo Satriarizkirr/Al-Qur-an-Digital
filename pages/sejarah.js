@@ -8,8 +8,7 @@ import {
   Text, 
   VStack, 
   Heading,
-  Spinner,
-  HStack,
+  Spinner 
 } from '@chakra-ui/react';
 
 export default function SejarahIslamSearch() {
