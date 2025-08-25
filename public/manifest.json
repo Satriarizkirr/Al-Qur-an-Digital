@@ -1,12 +1,14 @@
 {
-  "theme_color": "#FFFFFF",
-  "background_color": "#FFFFFF",
+  "theme_color": "#1A202C",
+  "background_color": "#1A202C",
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
+  "id": "/",
   "name": "Al-Quran Digital",
   "short_name": "Quran App",
   "description": "Aplikasi Al-Quran Digital Lengkap dengan Terjemahan dan Tafsir",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
@@ -23,37 +25,37 @@
     {
       "src": "/screenshots/mobile-1.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     },
     {
       "src": "/screenshots/mobile-2.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     },
     {
       "src": "/screenshots/mobile-3.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     },
-      {
+    {
       "src": "/screenshots/mobile-4.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     },
     {
       "src": "/screenshots/mobile-5.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     },
     {
       "src": "/screenshots/mobile-6.png",
       "type": "image/png",
-      "sizes": "1080x1920",
+      "sizes": "750x1333",
       "form_factor": "narrow"
     }
   ]
