@@ -3,19 +3,40 @@ import Image from "next/image";
 import {
   Box,
   Text,
-  Flex, // Saya ganti Flex jadi VStack untuk placeholder
-  VStack, // agar lebih pas secara semantik
+  VStack,
   Heading,
   useColorMode,
 } from "@chakra-ui/react";
 import { useFavoriteStore } from "stores/Favorite";
 import PageHeader from "@/components/PageHeader";
 import SurahList from "@/components/SurahList";
+import { motion } from "framer-motion"; // PENAMBAHAN: Import motion
+
+// PENAMBAHAN: Buat motion component
+const MotionBox = motion(Box);
+const MotionHeading = motion(Heading);
+const MotionVStack = motion(VStack);
 
 function FavoriteSurah() {
-  // Menggunakan nama state yang benar dari kode kamu: 'surahFavorites'
   const favoriteSurahList = useFavoriteStore((state) => state.surahFavorites);
   const { colorMode } = useColorMode();
+
+  // PENAMBAHAN: Definisikan variants untuk animasi, sama seperti di halaman 'Tentang'
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
 
   return (
     <>
@@ -25,27 +46,39 @@ function FavoriteSurah() {
 
       <PageHeader title="Surah Favorit" goBack />
 
-      <Box px="15px" pt="20px" as="main">
-        {/* IMPROVEMENT: Logika tampilan diubah pakai "ternary operator".
-          Ini lebih bersih: JIKA list ada isinya, TAMPILKAN list, JIKA TIDAK, TAMPILKAN placeholder.
-        */}
+      {/* PERUBAHAN: Bungkus konten utama dengan MotionBox */}
+      <MotionBox
+        px="15px"
+        pt="20px"
+        as="main"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {favoriteSurahList.length > 0 ? (
           <>
-            <Heading
+            <MotionHeading
+              variants={itemVariants} // Tambahkan animasi ke heading
               as="h2"
               color={colorMode === "dark" ? "gray.100" : "gray.600"}
               fontSize="2xl"
-              mb={4} // Beri sedikit jarak ke bawah
+              mb={4}
             >
               Surah favorit kamu:
-            </Heading>
+            </MotionHeading>
+            {/* Kita asumsikan SurahList sudah memiliki animasinya sendiri, 
+                jika belum, bungkus dengan MotionBox juga */}
             <SurahList items={favoriteSurahList} />
           </>
         ) : (
-          <VStack spacing={4} mt="50px" textAlign="center">
+          <MotionVStack
+            variants={itemVariants} // Tambahkan animasi ke placeholder
+            spacing={4}
+            mt="50px"
+            textAlign="center"
+          >
             <Image
               src="/images/joyride.svg"
-              // PERBAIKAN UTAMA: Ubah "300px" menjadi {300} dan "200px" menjadi {200}
               width={300}
               height={200}
               alt="Joyride Icon"
@@ -56,9 +89,9 @@ function FavoriteSurah() {
             >
               Anda belum punya surah yang ditandai sebagai favorit.
             </Text>
-          </VStack>
+          </MotionVStack>
         )}
-      </Box>
+      </MotionBox>
     </>
   );
 }
