@@ -11,6 +11,8 @@ import {
   IoHeart,
   IoSettingsOutline,
   IoSettings,
+  IoTimeOutline,    // ✅ Added missing import
+  IoTime,          // ✅ Added missing import
 } from "react-icons/io5";
 
 const MotionLink = motion(Link);
@@ -26,21 +28,15 @@ export default function Navbar() {
       color: "blue.500",
     },
     {
-      text: "Terakhir Baca",
-      icon: { outline: IoBookOutline, fill: IoBook },
-      href: "/terakhir-dibaca",
-      color: "green.500",
-    },
-    {
       text: "Favorit",
       icon: { outline: IoHeartOutline, fill: IoHeart },
       href: "/favorit",
       color: "red.500",
     },
     {
-      text: "Setelan",
-      icon: { outline: IoSettingsOutline, fill: IoSettings },
-      href: "/setelan",
+      text: "Jadwal Sholat",
+      icon: { outline: IoTimeOutline, fill: IoTime },  // ✅ Fixed property structure
+      href: "/PrayerTimes",                             // ✅ Corrected href
       color: "purple.500",
     },
   ];
@@ -56,7 +52,6 @@ export default function Navbar() {
       inset="auto 0 0 0"
       maxW="576px"
       mx="auto"
-      // DIUBAH: Bayangan dibuat lebih tegas (sm -> md) agar sama dengan header
       boxShadow="md"
       borderTopWidth="1px"
       borderColor={colorMode === "dark" ? "gray.600" : "gray.200"}
