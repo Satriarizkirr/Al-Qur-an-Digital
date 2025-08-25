@@ -7,23 +7,26 @@ export const useFavoriteStore = create(
       surahFavorites: [],
       addToFavorite: (surah) =>
         set({ surahFavorites: [surah, ...get().surahFavorites] }),
-      removeFromFavorite: (surahNumber) =>
+      removeFromFavorite: (surahNomor) =>
         set({
           surahFavorites: get().surahFavorites.filter(
-            (surah) => surah.number !== surahNumber
+            // PERUBAHAN: ganti .number menjadi .nomor
+            (surah) => surah.nomor !== surahNomor
           ),
         }),
-      surahIsFavorite: (surahNumber) =>
-        get().surahFavorites.some((surah) => surah.number === surahNumber),
+      surahIsFavorite: (surahNomor) =>
+        // PERUBAHAN: ganti .number menjadi .nomor
+        get().surahFavorites.some((surah) => surah.nomor === surahNomor),
       toggleFavorite: (surah) => {
-        get().surahIsFavorite(surah.number)
-          ? get().removeFromFavorite(surah.number)
+        // PERUBAHAN: ganti .number menjadi .nomor
+        get().surahIsFavorite(surah.nomor)
+          ? get().removeFromFavorite(surah.nomor)
           : get().addToFavorite(surah);
       },
     }),
     {
-      name: "MaosQuran-FavoriteSurah", // unique name
-      getStorage: () => localStorage, // (optional) by default, 'localStorage' is used
+      name: "MaosQuran-FavoriteSurah",
+      getStorage: () => localStorage,
       version: 1,
     }
   )

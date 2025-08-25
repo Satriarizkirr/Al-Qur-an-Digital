@@ -19,6 +19,7 @@ import {
   VStack,
   Divider,
   CloseButton,
+  Text,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,6 +28,8 @@ import {
   IoHeart,
   IoEllipsisVertical,
   IoMenu,
+  IoMoon,
+  IoSunny,
 } from "react-icons/io5";
 import { useFavoriteStore } from "stores/Favorite";
 import { usePreferenceStore } from "stores/Preference";
@@ -156,8 +159,74 @@ export default function PageHeader({ title, goBack, surah }) {
                   whileHover="hover"
                   whileTap="tap"
                 />
-                <MenuList minW="220px" bg={colorMode === "dark" ? "gray.700" : "white"}>
-                  {/* Opsi di halaman surah bisa ditambahkan di sini */}
+                <MenuList 
+                  minW="280px" 
+                  bg={colorMode === "dark" ? "gray.700" : "white"}
+                  border="1px solid"
+                  borderColor={colorMode === "dark" ? "gray.600" : "gray.200"}
+                  boxShadow="xl"
+                >
+                  {/* Mode Gelap */}
+                  <MenuItem 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleColorMode();
+                    }}
+                    bg="transparent"
+                    _hover={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                    _focus={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                  >
+                    <HStack justify="space-between" w="100%">
+                      <HStack>
+                        {colorMode === "dark" ? <IoSunny size="16px" /> : <IoMoon size="16px" />}
+                        <Text fontSize="sm">Mode Gelap</Text>
+                      </HStack>
+                    </HStack>
+                  </MenuItem>
+                  
+                  {/* Tampilkan Terjemahan */}
+                  <MenuItem 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      showTranslation();
+                    }}
+                    bg="transparent"
+                    _hover={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                    _focus={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                  >
+                    <HStack justify="space-between" w="100%">
+                      <Text fontSize="sm">Tampilkan Terjemahan</Text>
+                      <Switch
+                        isChecked={preference.translation}
+                        onChange={showTranslation}
+                        colorScheme="teal"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </HStack>
+                  </MenuItem>
+                  
+                  {/* Tampilkan Tafsir */}
+                  <MenuItem 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      showTafsir();
+                    }}
+                    bg="transparent"
+                    _hover={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                    _focus={{ bg: colorMode === "dark" ? "gray.600" : "gray.50" }}
+                  >
+                    <HStack justify="space-between" w="100%">
+                      <Text fontSize="sm">Tampilkan Tafsir</Text>
+                      <Switch
+                        isChecked={preference.tafsir}
+                        onChange={showTafsir}
+                        colorScheme="teal"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </HStack>
+                  </MenuItem>
                 </MenuList>
               </Menu>
             </HStack>
@@ -241,12 +310,13 @@ export default function PageHeader({ title, goBack, surah }) {
                       <FormLabel htmlFor="dark-mode-switch" mb="0" fontSize="sm">
                         Mode Gelap
                       </FormLabel>
-                      <Switch
-                        id="dark-mode-switch"
-                        isChecked={colorMode === 'dark'}
-                        onChange={toggleColorMode}
-                        colorScheme="teal"
-                        size="md"
+                      <IconButton
+                        aria-label="Toggle theme"
+                        icon={colorMode === "dark" ? <IoSunny size="16px" /> : <IoMoon size="16px" />}
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleColorMode}
+                        color={colorMode === "dark" ? "yellow.400" : "blue.400"}
                       />
                     </FormControl>
                     

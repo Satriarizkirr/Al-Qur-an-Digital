@@ -6,13 +6,14 @@ import {
   VStack,
   Heading,
   useColorMode,
+  Spinner, // Import Spinner
 } from "@chakra-ui/react";
 import { useFavoriteStore } from "stores/Favorite";
 import PageHeader from "@/components/PageHeader";
 import SurahList from "@/components/SurahList";
-import { motion } from "framer-motion"; // PENAMBAHAN: Import motion
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react"; // Import hook
 
-// PENAMBAHAN: Buat motion component
 const MotionBox = motion(Box);
 const MotionHeading = motion(Heading);
 const MotionVStack = motion(VStack);
@@ -20,16 +21,15 @@ const MotionVStack = motion(VStack);
 function FavoriteSurah() {
   const favoriteSurahList = useFavoriteStore((state) => state.surahFavorites);
   const { colorMode } = useColorMode();
+  
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
-  // PENAMBAHAN: Definisikan variants untuk animasi, sama seperti di halaman 'Tentang'
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -37,6 +37,19 @@ function FavoriteSurah() {
     visible: { opacity: 1, y: 0 },
   };
 
+  if (!hasMounted) {
+    return (
+        <>
+            <Head>
+                <title>Daftar Surah Favorit | Al-Quran Digital</title>
+            </Head>
+            <PageHeader title="Surah Favorit" goBack />
+            <VStack justify="center" align="center" h="50vh">
+                <Spinner />
+            </VStack>
+        </>
+    );
+  }
 
   return (
     <>
@@ -46,7 +59,6 @@ function FavoriteSurah() {
 
       <PageHeader title="Surah Favorit" goBack />
 
-      {/* PERUBAHAN: Bungkus konten utama dengan MotionBox */}
       <MotionBox
         px="15px"
         pt="20px"
@@ -58,7 +70,7 @@ function FavoriteSurah() {
         {favoriteSurahList.length > 0 ? (
           <>
             <MotionHeading
-              variants={itemVariants} // Tambahkan animasi ke heading
+              variants={itemVariants}
               as="h2"
               color={colorMode === "dark" ? "gray.100" : "gray.600"}
               fontSize="2xl"
@@ -66,13 +78,11 @@ function FavoriteSurah() {
             >
               Surah favorit kamu:
             </MotionHeading>
-            {/* Kita asumsikan SurahList sudah memiliki animasinya sendiri, 
-                jika belum, bungkus dengan MotionBox juga */}
             <SurahList items={favoriteSurahList} />
           </>
         ) : (
           <MotionVStack
-            variants={itemVariants} // Tambahkan animasi ke placeholder
+            variants={itemVariants}
             spacing={4}
             mt="50px"
             textAlign="center"
