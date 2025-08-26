@@ -14,6 +14,9 @@ import {
   Icon,
   Divider,
   Button,
+  Switch,
+  FormControl,
+  FormLabel,
 } from '@chakra-ui/react';
 import { 
   IoLocationOutline, 
@@ -22,6 +25,7 @@ import {
   IoSunnyOutline,
   IoMoonOutline,
   IoPartlySunnyOutline,
+  IoGlobeOutline,
 } from 'react-icons/io5';
 import { motion } from 'framer-motion';
 
@@ -53,33 +57,234 @@ export default function PrayerTimes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [nextPrayer, setNextPrayer] = useState(null);
+  const [useLocalTime, setUseLocalTime] = useState(true); // New state for local time toggle
+  const [userTimezone, setUserTimezone] = useState(null); // User's timezone
+  const [currentTime, setCurrentTime] = useState(new Date()); // Current time state
+  const [adzanSettings, setAdzanSettings] = useState({
+    Fajr: false,
+    Dhuhr: false,
+    Asr: false,
+    Maghrib: false,
+    Isha: false
+  }); // Adzan settings per prayer
+  const [playingAdzan, setPlayingAdzan] = useState(false); // Currently playing adzan
+  const [locationName, setLocationName] = useState(''); // User's location name
   const { colorMode } = useColorMode();
+
+  // Get location name from coordinates
+  const getLocationName = async (lat, lng) => {
+    try {
+      // Try multiple geocoding services as fallbacks
+      const services = [
+        // Service 1: OpenStreetMap Nominatim (free, no key required)
+        {
+          url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=id`,
+          parser: (data) => {
+            if (data.address) {
+              const parts = [];
+              if (data.address.village) parts.push(data.address.village);
+              if (data.address.town) parts.push(data.address.town);
+              if (data.address.city) parts.push(data.address.city);
+              if (data.address.state) parts.push(data.address.state);
+              return parts.join(', ') || data.display_name?.split(',')[0] || 'Lokasi Tidak Diketahui';
+            }
+            return 'Lokasi Tidak Diketahui';
+          }
+        },
+        // Service 2: BigDataCloud (fallback)
+        {
+          url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=id`,
+          parser: (data) => {
+            const locationParts = [];
+            if (data.locality) locationParts.push(data.locality);
+            if (data.city && data.city !== data.locality) locationParts.push(data.city);
+            if (data.principalSubdivision) locationParts.push(data.principalSubdivision);
+            return locationParts.join(', ') || 'Lokasi Tidak Diketahui';
+          }
+        }
+      ];
+
+      for (const service of services) {
+        try {
+          const response = await fetch(service.url, {
+            headers: {
+              'User-Agent': 'PrayerTimesApp/1.0'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const locationName = service.parser(data);
+            if (locationName !== 'Lokasi Tidak Diketahui') {
+              setLocationName(locationName);
+              return;
+            }
+          }
+        } catch (serviceError) {
+          console.log(`Service failed, trying next:`, serviceError.message);
+          continue;
+        }
+      }
+
+      // If all services fail, use coordinates as fallback
+      setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      
+    } catch (error) {
+      console.error('Error getting location name:', error);
+      // Use coordinates as ultimate fallback
+      setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    }
+  };
+
+  const getUserTimezone = () => {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setUserTimezone(timezone);
+      return timezone;
+    } catch (error) {
+      console.error('Error getting timezone:', error);
+      return null;
+    }
+  };
+
+  // Convert UTC time to user's local timezone
+  const convertToLocalTime = (utcTimeString, sourceTimezone = 'UTC') => {
+    try {
+      // Create a date object assuming the time is in the source timezone
+      const [hours, minutes] = utcTimeString.split(':').map(Number);
+      const today = new Date();
+      
+      // Create date in source timezone
+      const sourceDate = new Date();
+      sourceDate.setHours(hours, minutes, 0, 0);
+      
+      // If we have location, we can get more accurate timezone conversion
+      // For now, we'll use a simple offset calculation
+      const userTimezoneOffset = new Date().getTimezoneOffset();
+      const jakartaOffset = -420; // Jakarta is UTC+7 (420 minutes behind UTC)
+      
+      // Calculate the difference
+      const offsetDiff = jakartaOffset - userTimezoneOffset;
+      const localDate = new Date(sourceDate.getTime() + (offsetDiff * 60000));
+      
+      const localHours = localDate.getHours().toString().padStart(2, '0');
+      const localMinutes = localDate.getMinutes().toString().padStart(2, '0');
+      
+      return `${localHours}:${localMinutes}`;
+    } catch (error) {
+      console.error('Error converting time:', error);
+      return utcTimeString; // Return original if conversion fails
+    }
+  };
+
+  // Play adzan sound for specific prayer
+  const playAdzan = (prayerName) => {
+    if (!adzanSettings[prayerName]) return;
+    
+    setPlayingAdzan(prayerName);
+    
+    // Create audio element for adzan
+    const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.wav'); // You can replace with actual adzan audio URL
+    audio.volume = 0.7;
+    
+    audio.play().then(() => {
+      console.log(`Playing adzan for ${prayerName}...`);
+    }).catch((error) => {
+      console.error('Error playing adzan:', error);
+      setPlayingAdzan(false);
+    });
+    
+    audio.onended = () => {
+      setPlayingAdzan(false);
+    };
+    
+    // Stop after 3 minutes max
+    setTimeout(() => {
+      audio.pause();
+      setPlayingAdzan(false);
+    }, 180000);
+  };
+
+  // Check if it's prayer time and play adzan
+  const checkPrayerTime = (timings) => {
+    const now = new Date();
+    const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    
+    prayers.forEach(prayerName => {
+      if (!adzanSettings[prayerName]) return;
+      
+      const prayerTime = getDisplayTime(timings[prayerName]);
+      const [hours, minutes] = prayerTime.split(':').map(Number);
+      const prayerTimeMinutes = hours * 60 + minutes;
+      
+      // Check if current time matches prayer time (within 1 minute)
+      if (Math.abs(currentTimeMinutes - prayerTimeMinutes) <= 1 && !playingAdzan) {
+        playAdzan(prayerName);
+      }
+    });
+  };
+
+  const getDisplayTime = (originalTime) => {
+    if (!useLocalTime) return originalTime;
+    return convertToLocalTime(originalTime);
+  };
 
   // Get user location
   const getUserLocation = () => {
     setLoading(true);
     setError(null);
+    setLocationName('Mendapatkan lokasi...'); // Show loading state for location
     
     if (!navigator.geolocation) {
       setError('Geolocation tidak didukung oleh browser ini');
+      setLocationName('Lokasi Tidak Diketahui');
       setLoading(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        setLocation({ latitude, longitude });
-        await fetchPrayerTimes(latitude, longitude);
+        try {
+          const { latitude, longitude } = position.coords;
+          setLocation({ latitude, longitude });
+          
+          // Get location name first, then fetch prayer times
+          await getLocationName(latitude, longitude);
+          await fetchPrayerTimes(latitude, longitude);
+        } catch (err) {
+          console.error('Error in location processing:', err);
+          setError('Gagal memproses data lokasi');
+          setLoading(false);
+        }
       },
       (error) => {
-        console.error('Error getting location:', error);
-        setError('Gagal mendapatkan lokasi. Pastikan lokasi diizinkan.');
+        console.error('Geolocation error:', error);
+        let errorMessage = 'Gagal mendapatkan lokasi. ';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Izin lokasi ditolak. Silakan izinkan akses lokasi.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Informasi lokasi tidak tersedia.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'Waktu tunggu habis. Coba lagi.';
+            break;
+          default:
+            errorMessage += 'Terjadi kesalahan yang tidak diketahui.';
+            break;
+        }
+        
+        setError(errorMessage);
+        setLocationName('Lokasi Tidak Diketahui');
         setLoading(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000, // Increased timeout
         maximumAge: 300000, // 5 minutes
       }
     );
@@ -88,11 +293,13 @@ export default function PrayerTimes() {
   // Fetch prayer times from API
   const fetchPrayerTimes = async (lat, lng) => {
     try {
-      const today = new Date();
-      const dateString = today.toISOString().split('T')[0];
+      // TIDAK PERLU MEMBUAT TANGGAL DI SINI LAGI
+      // const today = new Date();
+      // const dateString = today.toISOString().split('T')[0];
       
       const response = await fetch(
-        `https://api.aladhan.com/v1/timings/${dateString}?latitude=${lat}&longitude=${lng}&method=2&school=0`
+        // HAPUS ${dateString} DARI URL, BIARKAN API YANG MENENTUKAN HARI INI
+        `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=2&school=0`
       );
       
       if (!response.ok) {
@@ -130,7 +337,8 @@ export default function PrayerTimes() {
     ];
 
     for (let prayer of prayers) {
-      const [hours, minutes] = prayer.time.split(':').map(Number);
+      const displayTime = getDisplayTime(prayer.time);
+      const [hours, minutes] = displayTime.split(':').map(Number);
       const prayerTime = hours * 60 + minutes;
       
       if (prayerTime > currentTime) {
@@ -140,6 +348,7 @@ export default function PrayerTimes() {
         
         setNextPrayer({
           ...prayer,
+          displayTime,
           timeLeft: { hours: hoursLeft, minutes: minutesLeft }
         });
         return;
@@ -148,7 +357,8 @@ export default function PrayerTimes() {
     
     // If no prayer left today, set to Fajr tomorrow
     const fajrTomorrow = prayers[0];
-    const [hours, minutes] = fajrTomorrow.time.split(':').map(Number);
+    const displayTime = getDisplayTime(fajrTomorrow.time);
+    const [hours, minutes] = displayTime.split(':').map(Number);
     const fajrTime = hours * 60 + minutes;
     const timeLeft = (24 * 60) - currentTime + fajrTime;
     const hoursLeft = Math.floor(timeLeft / 60);
@@ -156,6 +366,7 @@ export default function PrayerTimes() {
     
     setNextPrayer({
       ...fajrTomorrow,
+      displayTime,
       timeLeft: { hours: hoursLeft, minutes: minutesLeft },
       tomorrow: true
     });
@@ -167,8 +378,27 @@ export default function PrayerTimes() {
     return `${hours}:${minutes}`;
   };
 
+  // Handle timezone toggle
+  const handleTimezoneToggle = () => {
+    setUseLocalTime(!useLocalTime);
+    if (prayerTimes) {
+      // Recalculate next prayer with new timezone setting
+      setTimeout(() => {
+        calculateNextPrayer(prayerTimes.timings);
+      }, 100);
+    }
+  };
+
   useEffect(() => {
+    getUserTimezone();
     getUserLocation();
+    
+    // Update current time every second
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
   }, []);
 
   // Auto refresh every minute to update next prayer
@@ -176,11 +406,19 @@ export default function PrayerTimes() {
     const interval = setInterval(() => {
       if (prayerTimes) {
         calculateNextPrayer(prayerTimes.timings);
+        checkPrayerTime(prayerTimes.timings); // Check for prayer time
       }
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [prayerTimes]);
+  }, [prayerTimes, useLocalTime, adzanSettings]); // Fixed: changed adzanEnabled to adzanSettings
+
+  // Recalculate when timezone preference changes
+  useEffect(() => {
+    if (prayerTimes) {
+      calculateNextPrayer(prayerTimes.timings);
+    }
+  }, [useLocalTime]);
 
   if (loading) {
     return (
@@ -232,27 +470,64 @@ export default function PrayerTimes() {
       {/* Header with date and location */}
       <VStack spacing={4} mb={6}>
         <Heading size="lg" textAlign="center">
-      
+          Jadwal Sholat
         </Heading>
         
         <VStack spacing={2} textAlign="center">
           <Text fontSize="md" fontWeight="semibold">
             {prayerTimes.date.readable}
           </Text>
+          
+          {/* Current Time Display */}
+          <Text fontSize="lg" fontWeight="bold" color="teal.600">
+            {currentTime.toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            })}
+          </Text>
+          
           <Text fontSize="sm" color="gray.500">
             {prayerTimes.date.hijri.day} {prayerTimes.date.hijri.month.en} {prayerTimes.date.hijri.year} H
           </Text>
           
-          {location && (
+          {location && locationName && (
             <HStack spacing={1} color="gray.500" fontSize="sm">
               <Icon as={IoLocationOutline} />
-              <Text>
-                {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-              </Text>
+              <Text>{locationName}</Text>
+            </HStack>
+          )}
+
+          {/* Timezone Display */}
+          {userTimezone && (
+            <HStack spacing={1} color="gray.500" fontSize="xs">
+              <Icon as={IoGlobeOutline} />
+              <Text>{userTimezone}</Text>
             </HStack>
           )}
         </VStack>
       </VStack>
+
+      {/* Timezone Toggle */}
+      <Box mb={6} p={4} bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'} borderRadius="md">
+        <FormControl display="flex" alignItems="center" justifyContent="space-between">
+          <FormLabel htmlFor="timezone-toggle" mb="0" fontSize="sm">
+            <VStack align="start" spacing={0}>
+              <Text>Gunakan Waktu Lokal</Text>
+              <Text fontSize="xs" color="gray.500">
+                {useLocalTime ? 'Waktu sesuai device Anda' : 'Waktu dari server Aladhan'}
+              </Text>
+            </VStack>
+          </FormLabel>
+          <Switch
+            id="timezone-toggle"
+            colorScheme="teal"
+            isChecked={useLocalTime}
+            onChange={handleTimezoneToggle}
+          />
+        </FormControl>
+      </Box>
 
       {/* Next Prayer Countdown */}
       {nextPrayer && (
@@ -279,7 +554,7 @@ export default function PrayerTimes() {
               </Text>
             </HStack>
             <Text fontSize="2xl" fontWeight="bold" mt={1}>
-              {formatTime(nextPrayer.time)}
+              {formatTime(nextPrayer.displayTime || nextPrayer.time)}
             </Text>
             {nextPrayer.timeLeft && (
               <Text fontSize="sm" color="gray.600" mt={1}>
@@ -297,6 +572,7 @@ export default function PrayerTimes() {
         {prayers.map((prayer, index) => {
           const IconComponent = prayerIcons[prayer.key];
           const isNext = nextPrayer && nextPrayer.name === prayer.key;
+          const displayTime = getDisplayTime(prayer.time);
           
           return (
             <MotionBox
@@ -318,32 +594,64 @@ export default function PrayerTimes() {
                 border={isNext ? '1px solid' : 'none'}
                 borderColor={isNext ? 'teal.200' : 'transparent'}
               >
-                <HStack spacing={3}>
+                <HStack spacing={3} flex={1}>
                   <Icon 
                     as={IconComponent} 
                     boxSize={5} 
                     color={isNext ? 'teal.500' : 'gray.500'} 
                   />
-                  <Text 
-                    fontWeight={isNext ? 'bold' : 'medium'}
-                    color={isNext ? 'teal.600' : undefined}
-                  >
-                    {prayerNames[prayer.key]}
-                  </Text>
+                  <VStack align="start" spacing={0} flex={1}>
+                    <Text 
+                      fontWeight={isNext ? 'bold' : 'medium'}
+                      color={isNext ? 'teal.600' : undefined}
+                    >
+                      {prayerNames[prayer.key]}
+                    </Text>
+                    {useLocalTime && (
+                      <Text fontSize="xs" color="gray.500">
+                        Original: {formatTime(prayer.time)}
+                      </Text>
+                    )}
+                  </VStack>
                   {isNext && (
                     <Badge colorScheme="teal" size="sm">
                       Selanjutnya
                     </Badge>
                   )}
+                  {playingAdzan === prayer.key && (
+                    <Badge colorScheme="green" size="sm">
+                      🔊 Playing
+                    </Badge>
+                  )}
                 </HStack>
                 
-                <Text 
-                  fontWeight={isNext ? 'bold' : 'medium'}
-                  fontSize={isNext ? 'lg' : 'md'}
-                  color={isNext ? 'teal.600' : undefined}
-                >
-                  {formatTime(prayer.time)}
-                </Text>
+                <HStack spacing={3}>
+                  {/* Adzan Toggle for each prayer */}
+                  {prayer.key !== 'Sunrise' && ( // Sunrise is not a prayer time
+                    <VStack spacing={1}>
+                      <Switch
+                        size="sm"
+                        colorScheme="teal"
+                        isChecked={adzanSettings[prayer.key]}
+                        onChange={(e) => setAdzanSettings(prev => ({
+                          ...prev,
+                          [prayer.key]: e.target.checked
+                        }))}
+                      />
+                      <Text fontSize="xs" color="gray.500">
+                        Adzan
+                      </Text>
+                    </VStack>
+                  )}
+                  
+                  <Text 
+                    fontWeight={isNext ? 'bold' : 'medium'}
+                    fontSize={isNext ? 'lg' : 'md'}
+                    color={isNext ? 'teal.600' : undefined}
+                  >
+                    {formatTime(displayTime)}
+                  </Text>
+                </HStack>
               </Flex>
               
               {index < prayers.length - 1 && (

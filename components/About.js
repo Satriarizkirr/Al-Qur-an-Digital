@@ -35,13 +35,13 @@ export default function About() {
   const { colorMode } = useColorMode();
 
   const developer = {
-    name: "Satria RizkiRohmat",
+    name: "Satria Rizki R",
     role: "Full Stack Developer",
     avatar: "/images/pp.png",
     bio: "Passionate developer yang senang membangun aplikasi yang bermanfaat untuk umat. Semoga aplikasi Al-Qur'an digital ini dapat memudahkan dalam beribadah.",
     social: {
       github: "https://github.com/Satriarizkirr",
-      instagram: "https://instagram.com/satriaaa.rr",
+      instagram: "https://www.instagram.com/satriaaa_rr/",
       linkedin: "https://linkedin.com/in/SatriaRizki26",
       email: "rizkirsatria5@gmail.com"
     }
