@@ -14,6 +14,8 @@ import {
   Divider,
   Button,
   Switch,
+  FormControl,
+  FormLabel,
 } from '@chakra-ui/react';
 import { 
   IoLocationOutline, 
@@ -21,31 +23,17 @@ import {
   IoSunnyOutline,
   IoMoonOutline,
   IoPartlySunnyOutline,
+  IoNotificationsOutline,
 } from 'react-icons/io5';
-import { motion } from 'framer-motion';
 
-const MotionBox = motion(Box);
-
-const prayerIcons = {
-  Fajr: IoMoonOutline,
-  Sunrise: IoSunnyOutline,
-  Dhuhr: IoSunnyOutline,
-  Asr: IoPartlySunnyOutline,
-  Maghrib: IoPartlySunnyOutline,
-  Isha: IoMoonOutline,
-};
-
-const prayerNames = {
-  Fajr: 'Subuh',
-  Sunrise: 'Terbit',
-  Dhuhr: 'Dzuhur',
-  Asr: 'Ashar',
-  Maghrib: 'Maghrib',
-  Isha: 'Isya',
-};
-
-const defaultAdzanSettings = {
-  Fajr: false, Dhuhr: false, Asr: false, Maghrib: false, Isha: false
+// Daftar nama dan ikon sholat
+const prayerInfo = {
+  Fajr: { name: 'Subuh', icon: IoMoonOutline },
+  Sunrise: { name: 'Terbit', icon: IoSunnyOutline },
+  Dhuhr: { name: 'Dzuhur', icon: IoSunnyOutline },
+  Asr: { name: 'Ashar', icon: IoPartlySunnyOutline },
+  Maghrib: { name: 'Maghrib', icon: IoPartlySunnyOutline },
+  Isha: { name: 'Isya', icon: IoMoonOutline },
 };
 
 export default function PrayerTimes() {
@@ -56,76 +44,63 @@ export default function PrayerTimes() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { colorMode } = useColorMode();
 
-  const [adzanSettings, setAdzanSettings] = useState(() => {
+  const [adzanEnabled, setAdzanEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('adzanSettings');
-      return savedSettings ? JSON.parse(savedSettings) : defaultAdzanSettings;
+      const saved = localStorage.getItem('adzanEnabled');
+      return saved ? JSON.parse(saved) : false;
     }
-    return defaultAdzanSettings;
+    return false;
   });
 
   useEffect(() => {
-    localStorage.setItem('adzanSettings', JSON.stringify(adzanSettings));
-  }, [adzanSettings]);
-
-  const fetchPrayerTimes = async (latitude, longitude) => {
-    try {
-      const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`);
-      if (!response.ok) throw new Error('Gagal mengambil data jadwal sholat');
-      const data = await response.json();
-      if (data.code === 200) {
-        setPrayerTimes(data.data);
-      } else {
-        throw new Error('Data jadwal sholat tidak valid');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('adzanEnabled', JSON.stringify(adzanEnabled));
     }
+  }, [adzanEnabled]);
+
+  // --- FIX: Logika untuk menampilkan nama lokasi dibuat lebih detail ---
+  const fetchAndSetData = (latitude, longitude) => {
+    setLoading(true);
+    
+    // Ambil nama lokasi (dengan logika yang lebih baik)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=id`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.address) {
+          const { village, town, city, county, state } = data.address;
+          // Gabungin semua data lokasi yang ada, misal: "Cibentang, Sukabumi, Jawa Barat"
+          const locationString = [village, town, city, county, state].filter(Boolean).join(', ');
+          setLocationName(locationString || 'Nama Lokasi Tidak Tersedia'); 
+        } else {
+          setLocationName('Nama Lokasi Tidak Tersedia');
+        }
+      }).catch(() => {
+        setLocationName('Gagal Memuat Nama Lokasi');
+      });
+
+    // Ambil jadwal sholat (bagian ini tetap sama)
+    fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.code === 200) {
+          setPrayerTimes(data.data);
+        } else {
+          throw new Error('Data jadwal sholat tidak valid');
+        }
+      }).catch(err => {
+        setError(err.message);
+      }).finally(() => {
+        setLoading(false);
+      });
   };
 
   const getUserLocation = () => {
-    setLoading(true);
-    setError(null);
-    
-    if (!navigator.geolocation) {
-      setError('Geolocation tidak didukung oleh browser ini.');
-      setLoading(false);
-      return;
-    }
-  
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=id`);
-          if (!geoResponse.ok) throw new Error('Gagal mengambil nama lokasi');
-          
-          const geoData = await geoResponse.json();
-          
-          if (geoData.address) {
-            const { village, town, city, county, state } = geoData.address;
-            const locationParts = [village, town, city, county, state].filter(Boolean);
-            setLocationName(locationParts.join(', '));
-          } else {
-            setLocationName('Lokasi tidak dikenal');
-          }
-        } catch (e) {
-          console.error("Gagal mengambil nama lokasi:", e);
-          setLocationName('Gagal mendapatkan nama lokasi');
-        }
-        
-        await fetchPrayerTimes(latitude, longitude);
-      },
-      (err) => {
-        setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.');
-        setLoading(false);
-      }
+      (position) => fetchAndSetData(position.coords.latitude, position.coords.longitude),
+      () => setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.')
     );
   };
-  
+
   useEffect(() => {
     getUserLocation();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -136,51 +111,59 @@ export default function PrayerTimes() {
     if (!prayerTimes) return { nextPrayer: null, prayers: [] };
 
     const prayerSchedule = Object.entries(prayerTimes.timings)
+      .filter(([name]) => prayerInfo[name])
       .map(([name, time]) => {
         const [h, m] = time.split(':').map(Number);
         return { name, time, timeInMinutes: h * 60 + m };
-      })
-      .filter(p => prayerNames[p.name]);
+      });
     
     const now = new Date();
     const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
     
-    let next = prayerSchedule.find(p => p.timeInMinutes > currentTimeInMinutes);
+    let next = prayerSchedule.find(p => p.name !== 'Sunrise' && p.timeInMinutes > currentTimeInMinutes);
     if (!next) {
-      next = prayerSchedule[0]; // Fajr tomorrow
+      next = prayerSchedule.find(p => p.name === 'Fajr');
     }
 
     return { nextPrayer: next, prayers: prayerSchedule };
   }, [prayerTimes]);
 
 
-  if (loading) return <Box p={8} textAlign="center"><Spinner size="xl" color="teal.500" /><Text mt={2}>Memuat data...</Text></Box>;
+  if (loading) return <Box p={8} textAlign="center"><Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="teal.500" size="xl" /></Box>;
   if (error) return <Box p={8}><Alert status="error"><AlertIcon />{error}</Alert></Box>;
   if (!prayerTimes) return null;
 
   return (
     <Box p={4} maxW="md" mx="auto" pb="100px">
       <VStack spacing={4} mb={6}>
-        <Heading size="lg" textAlign="center"></Heading>
+        <Heading size="lg" textAlign="center">Jadwal Sholat</Heading>
         <VStack spacing={1} textAlign="center">
           <Text fontSize="lg" fontWeight="semibold">{prayerTimes.date.readable}</Text>
           <Text fontSize="2xl" fontWeight="bold" color="teal.500">
             {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </Text>
-          <Text fontSize="sm" color="gray.500">{prayerTimes.date.hijri.date} {prayerTimes.date.hijri.month.en} {prayerTimes.date.hijri.year} H</Text>
-          {locationName && (
-            <HStack spacing={1} color="gray.500" fontSize="sm">
-              <Icon as={IoLocationOutline} />
-              <Text>{locationName}</Text>
-            </HStack>
-          )}
+          <Text fontSize="sm" color="gray.500">
+            {prayerTimes.date.hijri.day} {prayerTimes.date.hijri.month.en} {prayerTimes.date.hijri.year} H
+          </Text>
+          <HStack spacing={1} color="gray.500" fontSize="sm">
+            <Icon as={IoLocationOutline} />
+            <Text>{locationName}</Text>
+          </HStack>
         </VStack>
+        
+        <FormControl display='flex' alignItems='center' justifyContent='space-between' p={3} bg={colorMode === 'dark' ? 'gray.700' : 'gray.100'} borderRadius='lg'>
+          <HStack>
+            <Icon as={IoNotificationsOutline} />
+            <FormLabel htmlFor='adzan-alerts' mb='0'>Notifikasi Adzan</FormLabel>
+          </HStack>
+          <Switch id='adzan-alerts' colorScheme='teal' isChecked={adzanEnabled} onChange={(e) => setAdzanEnabled(e.target.checked)} />
+        </FormControl>
       </VStack>
 
       {nextPrayer && (
         <Box p={4} bg={colorMode === 'dark' ? 'teal.900' : 'teal.100'} borderRadius="lg" mb={6} textAlign="center">
           <Text fontSize="sm" color={colorMode === 'dark' ? 'teal.200' : 'teal.800'} fontWeight="semibold">SHOLAT SELANJUTNYA</Text>
-          <Text fontSize="2xl" fontWeight="bold">{prayerNames[nextPrayer.name]}</Text>
+          <Text fontSize="2xl" fontWeight="bold">{prayerInfo[nextPrayer.name].name}</Text>
           <Text fontSize="3xl" fontWeight="bold">{nextPrayer.time}</Text>
         </Box>
       )}
@@ -189,39 +172,24 @@ export default function PrayerTimes() {
         {prayers.map(({ name, time }) => {
           const isNext = nextPrayer && nextPrayer.name === name;
           return (
-            <MotionBox key={name} w="full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Box key={name} w="full">
               <Flex
                 align="center"
                 justify="space-between"
                 p={4}
                 bg={isNext ? (colorMode === 'dark' ? 'gray.700' : 'gray.100') : 'transparent'}
-                borderRadius="md"
               >
                 <HStack spacing={4}>
-                  <Icon as={prayerIcons[name]} boxSize={5} color={isNext ? 'teal.500' : 'gray.500'} />
+                  <Icon as={prayerInfo[name].icon} boxSize={5} color={isNext ? 'teal.500' : 'gray.500'} />
                   <Text fontWeight={isNext ? 'bold' : 'medium'} fontSize="lg">
-                    {prayerNames[name]}
+                    {prayerInfo[name].name}
                   </Text>
                 </HStack>
-                <HStack spacing={4}>
-                  <Text fontWeight={isNext ? 'bold' : 'medium'} fontSize="lg">
-                    {time}
-                  </Text>
-                  {name !== 'Sunrise' && (
-                    <VStack spacing={0}>
-                      <Switch
-                        colorScheme="teal"
-                        isChecked={adzanSettings[name]}
-                        onChange={(e) => {
-                          setAdzanSettings(prev => ({ ...prev, [name]: e.target.checked }));
-                        }}
-                      />
-                      <Text fontSize="xs" color="gray.500">Adzan</Text>
-                    </VStack>
-                  )}
-                </HStack>
+                <Text fontWeight={isNext ? 'bold' : 'medium'} fontSize="lg">
+                  {time}
+                </Text>
               </Flex>
-            </MotionBox>
+            </Box>
           );
         })}
       </VStack>
