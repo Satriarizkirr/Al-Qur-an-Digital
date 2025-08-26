@@ -54,56 +54,65 @@ export default function PrayerTimes() {
   });
 
   useEffect(() => {
-    // --- FIX 1: GANTI URL DENGAN SUARA ADZAN ASLI ---
     setAudio(new Audio('https://www.islamcan.com/audio/adhan/azan2.mp3'));
   }, []);
-
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('adzanEnabled', JSON.stringify(adzanEnabled));
     }
   }, [adzanEnabled]);
-
-  const fetchAndSetData = (latitude, longitude) => {
+  
+  // --- FIX ANTI-GLITCH: Menggabungkan semua proses loading jadi satu ---
+  const getUserLocationAndData = () => {
     setLoading(true);
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=id`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.address) {
-          const { village, town, city, county, state } = data.address;
-          const locationString = [village, town, city, county, state].filter(Boolean).join(', ');
-          setLocationName(locationString || 'Nama Lokasi Tidak Tersedia'); 
-        } else {
-          setLocationName('Nama Lokasi Tidak Tersedia');
-        }
-      }).catch(() => {
-        setLocationName('Gagal Memuat Nama Lokasi');
-      });
-
-    fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.code === 200) setPrayerTimes(data.data);
-        else throw new Error('Data jadwal sholat tidak valid');
-      }).catch(err => {
-        setError(err.message);
-      }).finally(() => {
-        setLoading(false);
-      });
-  };
-
-  // --- FIX 2: Minta lokasi dengan akurasi tinggi ---
-  const getUserLocation = () => {
+    setError(null);
+    
     navigator.geolocation.getCurrentPosition(
-      (position) => fetchAndSetData(position.coords.latitude, position.coords.longitude),
-      () => setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.'),
-      { enableHighAccuracy: true } // Minta akurasi terbaik dari browser/GPS
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Siapkan dua permintaan API secara bersamaan
+          const locationPromise = fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=id`).then(res => res.json());
+          const prayerPromise = fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`).then(res => res.json());
+
+          // Tunggu sampai keduanya selesai
+          const [locationData, prayerData] = await Promise.all([locationPromise, prayerPromise]);
+
+          // Proses data lokasi
+          if (locationData && locationData.address) {
+            const { village, town, city, county, state } = locationData.address;
+            const locationString = [village, town, city, county, state].filter(Boolean).join(', ');
+            setLocationName(locationString || 'Nama Lokasi Tidak Tersedia');
+          } else {
+            setLocationName('Nama Lokasi Tidak Tersedia');
+          }
+
+          // Proses data jadwal sholat
+          if (prayerData.code === 200) {
+            setPrayerTimes(prayerData.data);
+          } else {
+            throw new Error('Data jadwal sholat tidak valid');
+          }
+
+        } catch (err) {
+          setError(err.message || "Gagal memuat data.");
+        } finally {
+          // Matikan loading HANYA setelah semua data siap
+          setLoading(false);
+        }
+      },
+      () => {
+        setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.');
+        setLoading(false);
+      },
+      { enableHighAccuracy: true }
     );
   };
 
   useEffect(() => {
-    getUserLocation();
+    getUserLocationAndData();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -115,12 +124,11 @@ export default function PrayerTimes() {
       const currentTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       Object.entries(prayerTimes.timings).forEach(([name, time]) => {
         if (name !== 'Sunrise' && time === currentTimeStr) {
-          console.log(`Waktu ${name} tiba! Memutar adzan...`);
           audio.play().catch(e => console.error("Gagal memutar audio:", e));
         }
       });
     };
-    const adzanChecker = setInterval(checkTime, 30000); 
+    const adzanChecker = setInterval(checkTime, 30000);
     return () => clearInterval(adzanChecker);
   }, [adzanEnabled, prayerTimes, audio]);
 
@@ -146,7 +154,7 @@ export default function PrayerTimes() {
   return (
     <Box p={4} maxW="md" mx="auto" pb="100px">
       <VStack spacing={4} mb={6}>
-        <Heading size="lg" textAlign="center">Jadwal Sholat</Heading>
+        <Heading size="lg" textAlign="center"></Heading>
         <VStack spacing={1} textAlign="center">
           <Text fontSize="lg" fontWeight="semibold">{prayerTimes.date.readable}</Text>
           <Text fontSize="2xl" fontWeight="bold" color="teal.500">
@@ -205,7 +213,7 @@ export default function PrayerTimes() {
       </VStack>
 
       <Box textAlign="center" mt={6}>
-        <Button leftIcon={<IoRefreshOutline />} variant="ghost" size="sm" onClick={getUserLocation}>
+        <Button leftIcon={<IoRefreshOutline />} variant="ghost" size="sm" onClick={getUserLocationAndData}>
           Perbarui Lokasi
         </Button>
       </Box>
