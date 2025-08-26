@@ -43,6 +43,7 @@ export default function PrayerTimes() {
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const { colorMode } = useColorMode();
+  const [audio, setAudio] = useState(null);
 
   const [adzanEnabled, setAdzanEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -53,22 +54,24 @@ export default function PrayerTimes() {
   });
 
   useEffect(() => {
+    // --- FIX 1: GANTI URL DENGAN SUARA ADZAN ASLI ---
+    setAudio(new Audio('https://www.islamcan.com/audio/adhan/azan2.mp3'));
+  }, []);
+
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('adzanEnabled', JSON.stringify(adzanEnabled));
     }
   }, [adzanEnabled]);
 
-  // --- FIX: Logika untuk menampilkan nama lokasi dibuat lebih detail ---
   const fetchAndSetData = (latitude, longitude) => {
     setLoading(true);
-    
-    // Ambil nama lokasi (dengan logika yang lebih baik)
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=id`)
       .then(res => res.json())
       .then(data => {
         if (data && data.address) {
           const { village, town, city, county, state } = data.address;
-          // Gabungin semua data lokasi yang ada, misal: "Cibentang, Sukabumi, Jawa Barat"
           const locationString = [village, town, city, county, state].filter(Boolean).join(', ');
           setLocationName(locationString || 'Nama Lokasi Tidak Tersedia'); 
         } else {
@@ -78,15 +81,11 @@ export default function PrayerTimes() {
         setLocationName('Gagal Memuat Nama Lokasi');
       });
 
-    // Ambil jadwal sholat (bagian ini tetap sama)
     fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`)
       .then(res => res.json())
       .then(data => {
-        if (data.code === 200) {
-          setPrayerTimes(data.data);
-        } else {
-          throw new Error('Data jadwal sholat tidak valid');
-        }
+        if (data.code === 200) setPrayerTimes(data.data);
+        else throw new Error('Data jadwal sholat tidak valid');
       }).catch(err => {
         setError(err.message);
       }).finally(() => {
@@ -94,10 +93,12 @@ export default function PrayerTimes() {
       });
   };
 
+  // --- FIX 2: Minta lokasi dengan akurasi tinggi ---
   const getUserLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => fetchAndSetData(position.coords.latitude, position.coords.longitude),
-      () => setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.')
+      () => setError('Gagal mendapatkan lokasi. Mohon izinkan akses di browser.'),
+      { enableHighAccuracy: true } // Minta akurasi terbaik dari browser/GPS
     );
   };
 
@@ -107,27 +108,36 @@ export default function PrayerTimes() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (!adzanEnabled || !prayerTimes || !audio) return;
+    const checkTime = () => {
+      const now = new Date();
+      const currentTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      Object.entries(prayerTimes.timings).forEach(([name, time]) => {
+        if (name !== 'Sunrise' && time === currentTimeStr) {
+          console.log(`Waktu ${name} tiba! Memutar adzan...`);
+          audio.play().catch(e => console.error("Gagal memutar audio:", e));
+        }
+      });
+    };
+    const adzanChecker = setInterval(checkTime, 30000); 
+    return () => clearInterval(adzanChecker);
+  }, [adzanEnabled, prayerTimes, audio]);
+
   const { nextPrayer, prayers } = useMemo(() => {
     if (!prayerTimes) return { nextPrayer: null, prayers: [] };
-
     const prayerSchedule = Object.entries(prayerTimes.timings)
       .filter(([name]) => prayerInfo[name])
       .map(([name, time]) => {
         const [h, m] = time.split(':').map(Number);
         return { name, time, timeInMinutes: h * 60 + m };
       });
-    
     const now = new Date();
     const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-    
     let next = prayerSchedule.find(p => p.name !== 'Sunrise' && p.timeInMinutes > currentTimeInMinutes);
-    if (!next) {
-      next = prayerSchedule.find(p => p.name === 'Fajr');
-    }
-
+    if (!next) next = prayerSchedule.find(p => p.name === 'Fajr');
     return { nextPrayer: next, prayers: prayerSchedule };
   }, [prayerTimes]);
-
 
   if (loading) return <Box p={8} textAlign="center"><Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="teal.500" size="xl" /></Box>;
   if (error) return <Box p={8}><Alert status="error"><AlertIcon />{error}</Alert></Box>;
